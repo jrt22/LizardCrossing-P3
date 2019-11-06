@@ -127,13 +127,19 @@ class Cat {
 
 	public:
 		Cat (int id);
+		int getID();
 		void run();
 		void wait();
 
 	private:
-		void* runThread(void *param);
+		static void* runThread(void *param);
 		void sleepNow();
 };
+
+
+{//TAKE THIS OUT BEFORE RUNNING THE CODE
+//THE OTHER SIDE IS AT THE END OF CAT FUNCTIONS
+
 
 /**
  * Constructs a cat.
@@ -192,7 +198,7 @@ void * Cat::runThread( void * param )
 		sleepNow();
 
         //freezes cats and lizards to check lizard crossing
-        pthread_mutex_lock(&catLock); // AP JT
+        pthread_mutex_lock(&lock); // AP JT
 		/*
 	     * Check for too many lizards crossing
 	     */
@@ -201,7 +207,7 @@ void * Cat::runThread( void * param )
 		  cout << "\tThe cats are happy - they have toys.\n";
 		  exit( -1 );
 		}
-		pthread_mutex_unlock(&catLock); // AP JT
+		pthread_mutex_unlock(&Lock); // AP JT
     }
 
 	pthread_exit(NULL);
@@ -236,6 +242,8 @@ void Cat::sleepNow()
     }
 }
 
+}//end cat functions
+
 
 class Lizard {
 	int       _id;     // the Id of the lizard
@@ -243,11 +251,12 @@ class Lizard {
 
 	public:
 		Lizard(int id);
+		int getID();
 		void run();
 		void wait();
 
 	private:
-		void* runThread(void *param);
+		static void* runThread(void *param);
 		void sleepNow();
 
 		void sago2MonkeyGrassIsSafe();
@@ -260,6 +269,9 @@ class Lizard {
 
 };
 
+{//TAKE THIS OUT BEFORE RUNNING THE CODE
+//THE OTHER SIDE IS AT THE END OF CAT FUNCTIONS
+
 /**
  * Constructs a lizard.
  *
@@ -267,7 +279,7 @@ class Lizard {
  */
 Lizard::Lizard (int id)
 {
-	_id = id;
+	_id = getID();
 }
 
 /**
@@ -278,7 +290,7 @@ Lizard::Lizard (int id)
  void Lizard::run()
  {
 	 // launch the thread to simulate the lizard's behavior
-	 pthread_create(&_thread, NULL, runThread, &NULL); // AP JT
+	 pthread_create(&_thread, NULL, runThread, (void *)this); // AP JT
  }
 
  /**
@@ -305,9 +317,11 @@ Lizard::Lizard (int id)
   */
 void * Lizard::runThread( void * param )
 {
+    Lizard* myLizard = (Lizard *) param;
+
 	if (debug)
     {
-      cout << "[" << _id << "] lizard is alive" << endl;
+      cout << "[" << myLizard->getID() << "] lizard is alive" << endl;
       cout << std::flush;
     }
 
@@ -588,6 +602,7 @@ void Lizard::madeIt2Sago()
     }
 }
 
+}//ends lizard functions
 
 
 
@@ -605,8 +620,9 @@ int main(int argc, char **argv)
 	/*
 	 * Declare local variables
      */
-
-
+    int i; // AP JT
+    Lizard LizardList[NUM_LIZARDS];
+    Cat CatList[NUM_CATS];
 
 
 	/*
@@ -635,19 +651,28 @@ int main(int argc, char **argv)
 	/*
      * Initialize locks and/or semaphores
      */
-
+    pthread_mutex_init(&Lock);
+    //add semaphore init
 
 
 
 	/*
      * Create NUM_LIZARDS lizard threads
      */
-
+    for(i=0; i<NUM_LIZARDS; i++)
+    {
+        LizardList[i].Lizard();
+        LizardList[i].run();
+    }
 
     /*
      * Create NUM_CATS cat threads
      */
-
+    for(i=0; i<NUM_CATS; i++)
+    {
+        CatList[i].Cat();
+        CatList[i].run();
+    }
 
 
 	/*
@@ -665,7 +690,15 @@ int main(int argc, char **argv)
     /*
      * Wait until all threads terminate
      */
+    for(i=0; i<NUM_LIZARDS; i++) // AP JT
+    {
+        LizardList[i].wait(); // AP JT
+    }
 
+    for(i=0; i<NUM_CATS; i++) // AP JT
+    {
+        CatList[i].wait(); // AP JT
+    }
 
 
 
@@ -674,7 +707,8 @@ int main(int argc, char **argv)
 	/*
      * Delete the locks and semaphores
      */
-
+    pthread_mutex_destroy(&lock);
+    //add semaphore destroy
 
 
 	/*
