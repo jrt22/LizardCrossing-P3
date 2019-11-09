@@ -6,7 +6,7 @@
 /*   lizard.cpp                                                */
 /*                                                             */
 /* Be sure to use the -lpthread option for the compile command */
-/*   g++ -g -Wall lizard.cpp -o lizard -lpthread               */
+/*   g++ -g -Wall -std=c++11 lizard.cpp -o lizard -lpthread    */
 /*                                                             */
 /* Execute with the -d command-line option to enable debugging */
 /* output.  For example,                                       */
@@ -127,7 +127,7 @@ class Cat {
 
 	public:
 		Cat (int id);
-		int getID();
+		int getId();
 		void run();
 		void wait();
 
@@ -152,6 +152,16 @@ Cat::Cat (int id)
 }
 
 /**
+ * Returns the Id of the cat.
+ *
+ * @return the Id of a cat
+*/
+int Cat::getId()
+{
+    return _id;
+}
+
+/**
  * Launches a cat thread.
  *
  * Status: Test AP JT
@@ -159,7 +169,7 @@ Cat::Cat (int id)
  void Cat::run()
  {
 	 // launch the thread to simulate the cat's behavior
-	 pthread_create(&_thread, NULL, runThread, &NULL); // AP JT
+	 pthread_create(&_thread, NULL, runThread, (void *)this); // AP JT
 
  }
 
@@ -187,15 +197,17 @@ Cat::Cat (int id)
   */
 void * Cat::runThread( void * param )
 {
+    Cat* myCat = (Cat*) param;
+
 	if (debug)
     {
-		cout << "[" << _id << "] cat is alive\n";
+		cout << "[" << myCat->getId() << "] cat is alive\n";
 		cout << std::flush;
     }
 
 	while(running)
     {
-		sleepNow();
+		myCat->sleepNow();
 
         //freezes cats and lizards to check lizard crossing
         pthread_mutex_lock(&lock); // AP JT
@@ -251,14 +263,14 @@ class Lizard {
 
 	public:
 		Lizard(int id);
-		int getID();
+		int getId();
 		void run();
 		void wait();
 
 	private:
 		static void* runThread(void *param);
-		void sleepNow();
 
+		void sleepNow();
 		void sago2MonkeyGrassIsSafe();
 		void crossSago2MonkeyGrass();
 		void madeIt2MonkeyGrass();
@@ -270,7 +282,7 @@ class Lizard {
 };
 
 {//TAKE THIS OUT BEFORE RUNNING THE CODE
-//THE OTHER SIDE IS AT THE END OF CAT FUNCTIONS
+//THE OTHER SIDE IS AT THE END OF lizard FUNCTIONS
 
 /**
  * Constructs a lizard.
@@ -279,7 +291,17 @@ class Lizard {
  */
 Lizard::Lizard (int id)
 {
-	_id = getID();
+	_id = id;
+}
+
+/**
+ * Returns the Id of the lizard.
+ *
+ * @return the Id of a lizard
+*/
+int Lizard::getId()
+{
+    return _id;
 }
 
 /**
@@ -621,8 +643,6 @@ int main(int argc, char **argv)
 	 * Declare local variables
      */
     int i; // AP JT
-    Lizard LizardList[NUM_LIZARDS];
-    Cat CatList[NUM_CATS];
 
 
 	/*
@@ -651,28 +671,34 @@ int main(int argc, char **argv)
 	/*
      * Initialize locks and/or semaphores
      */
-    pthread_mutex_init(&Lock);
-    //add semaphore init
+    pthread_mutex_init(&Lock); // AP JT
+    sem_init(&lizLock, 0, MAX_LIZARD_CROSSING)
 
 
 
 	/*
      * Create NUM_LIZARDS lizard threads
      */
-    for(i=0; i<NUM_LIZARDS; i++)
-    {
-        LizardList[i].Lizard();
-        LizardList[i].run();
-    }
+    Lizard** allLizards = new Lizard*[NUM_LIZARDS];
+    for(i=0; i<NUM_LIZARDS; i++) // AP JT
+        allLizards[i] = new Lizard(i); // AP JT
+
 
     /*
      * Create NUM_CATS cat threads
      */
-    for(i=0; i<NUM_CATS; i++)
-    {
-        CatList[i].Cat();
-        CatList[i].run();
-    }
+    Cat** allCats = new Cat*[NUM_CATS]; // AP JT
+    for(i=0; i<NUM_CATS; i++) // AP JT
+        allCats[i] = new Cat(i); // AP JT
+
+
+
+    // run lizard and cat threads
+    for(i=0; i<NUM_LIZARDS; i++) // AP JT
+        allLizards[i].run(); // AP JT
+
+    for(i=0; i<NUM_CATS; i++) // AP JT
+        allCats[i].run(); // AP JT
 
 
 	/*
@@ -691,14 +717,12 @@ int main(int argc, char **argv)
      * Wait until all threads terminate
      */
     for(i=0; i<NUM_LIZARDS; i++) // AP JT
-    {
-        LizardList[i].wait(); // AP JT
-    }
+        allLizards[i].wait(); // AP JT
+
 
     for(i=0; i<NUM_CATS; i++) // AP JT
-    {
-        CatList[i].wait(); // AP JT
-    }
+        allCats[i].wait(); // AP JT
+
 
 
 
@@ -707,9 +731,18 @@ int main(int argc, char **argv)
 	/*
      * Delete the locks and semaphores
      */
-    pthread_mutex_destroy(&lock);
-    //add semaphore destroy
+    pthread_mutex_destroy(&lock); // AP JT
+    sem_destroy(&lizLock); // AP JT
 
+    /*
+     * Delete all cat and lizard objects
+     */
+    for(i=0; i<NUM_LIZARDS; i++) // AP JT
+        delete allLizards[i]; // AP JT
+    delete allLizards;
+    for(i=0; i<NUM_CATS; i++) // AP JT
+        delete allCats[i]; // AP JT
+    delete allCats; // AP JT
 
 	/*
      * Exit happily
