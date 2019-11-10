@@ -37,7 +37,7 @@ using namespace std;
  * The comments are probably useful.
  */
 
-{
+
 
 
 /*
@@ -91,7 +91,7 @@ using namespace std;
  * Number of seconds it takes to cross the driveway
  */
 #define CROSS_SECONDS        2
-}
+
 
 /*
  * Declare global variables here
@@ -99,10 +99,10 @@ using namespace std;
 
 /*
 mutex lock is for cats and keeping track of crossing lizards
-semaphore is for lizards
+semaphore is for lizards and printing debug statements in order
 */
 pthread_mutex_t lock; // AP JT
-sem_t lizLock; // AP JT
+sem_t lizLock, debugLock; // AP JT
 
 
 /**************************************************/
@@ -199,8 +199,10 @@ void * Cat::runThread( void * param )
 
 	if (debug)
     {
+		sem_wait(&debugLock); // AP JT
 		cout << "[" << myCat->getId() << "] cat is alive\n";
 		cout << std::flush;
+		sem_post(&debugLock); // AP JT
     }
 
 	while(running)
@@ -217,7 +219,7 @@ void * Cat::runThread( void * param )
 		  cout << "\tThe cats are happy - they have toys.\n";
 		  exit( -1 );
 		}
-		pthread_mutex_unlock(&Lock); // AP JT
+		pthread_mutex_unlock(&lock); // AP JT
     }
 
 	pthread_exit(NULL);
@@ -239,16 +241,20 @@ void Cat::sleepNow()
 
 	if (debug)
     {
+        sem_wait(&debugLock); // AP JT
 		cout << "[" << _id << "] cat sleeping for " << sleepSeconds << " seconds" << endl;
 		cout << std::flush;
+		sem_post(&debugLock); // AP JT
     }
 
 	sleep( sleepSeconds );
 
 	if (debug)
     {
+        sem_wait(&debugLock); // AP JT
 		cout << "[" << _id << "] cat awake" << endl;
 		cout << std::flush;
+		sem_post(&debugLock); // AP JT
     }
 }
 
@@ -340,8 +346,10 @@ void * Lizard::runThread( void * param )
 
 	if (debug)
     {
-      cout << "[" << myLizard->getID() << "] lizard is alive" << endl;
-      cout << std::flush;
+        sem_wait(&debugLock); // AP JT
+        cout << "[" << myLizard->getId() << "] lizard is alive" << endl;
+        cout << std::flush;
+        sem_post(&debugLock); // AP JT
     }
 
 	while(running)
@@ -384,16 +392,20 @@ void Lizard::sleepNow()
 
 	if (debug)
     {
-      cout << "[" << _id << "] sleeping for " << sleepSeconds << " seconds" << endl;
-      cout << std::flush;
+        sem_wait(&debugLock); // AP JT
+        cout << "[" << _id << "] sleeping for " << sleepSeconds << " seconds" << endl;
+        cout << std::flush;
+        sem_post(&debugLock); // AP JT
     }
 
 	sleep( sleepSeconds );
 
 	if (debug)
     {
-      cout << "[" << _id << "] awake" << endl;
-      cout << std::flush;
+        sem_wait(&debugLock); // AP JT
+        cout << "[" << _id << "] awake" << endl;
+        cout << std::flush;
+        sem_post(&debugLock); // AP JT
     }
 }
 
@@ -412,21 +424,25 @@ void Lizard::sago2MonkeyGrassIsSafe()
 {
 	if (debug)
     {
+        sem_wait(&debugLock); // AP JT
 		cout << "[" << _id << "] checking  sago -> monkey grass" << endl;
 		cout << std::flush;
+		sem_post(&debugLock); // AP JT
     }
 
     sem_wait(&lizLock); // AP JT
-    pthreads_mutex_lock(&lock); // AP JT
+    pthread_mutex_lock(&lock); // AP JT
     numCrossingSago2MonkeyGrass++; // AP JT
-    pthreads_mutex_unlock(&lock); // AP JT
+    pthread_mutex_unlock(&lock); // AP JT
 
 
 
 	if (debug)
     {
+        sem_wait(&debugLock); // AP JT
 		cout << "[" << _id << "] thinks  sago -> monkey grass  is safe" << endl;
 		cout << std::flush;
+		sem_post(&debugLock); // AP JT
     }
 
 }
@@ -441,22 +457,27 @@ void Lizard::sago2MonkeyGrassIsSafe()
  */
 void Lizard::crossSago2MonkeyGrass()
 {
+    //check to see if it is safe then starts
+    sago2MonkeyGrassIsSafe(); //AP JT
+
+
 	if (debug)
     {
-      cout << "[" << _id << "] crossing  sago -> monkey grass" << endl;
-      cout << std::flush;
+        sem_wait(&debugLock); // AP JT
+        cout << "[" << _id << "] crossing  sago -> monkey grass" << endl;
+        cout << std::flush;
+        sem_post(&debugLock); // AP JT
     }
 
 	/*
 	 * One more crossing this way
 	 */
-    Sago2MonkeyGrassIsSafe(); //AP JT
 
 
 	/*
      * Check for lizards cross both ways
      */
-    pthreads_mutex_lock(&lock); // AP JT
+    pthread_mutex_lock(&lock); // AP JT
 	if (numCrossingMonkeyGrass2Sago && UNIDIRECTIONAL)
     {
 		cout << "\tCrash!  We have a pile-up on the concrete." << endl;
@@ -464,7 +485,7 @@ void Lizard::crossSago2MonkeyGrass()
 		cout << "\t" << numCrossingMonkeyGrass2Sago << " crossing monkey grass -> sago" << endl;
 		exit( -1 );
     }
-    pthreads_mutex_unlock(&lock); // AP JT
+    pthread_mutex_unlock(&lock); // AP JT
 
 	/*
      * It takes a while to cross, so simulate it
@@ -488,15 +509,17 @@ void Lizard::madeIt2MonkeyGrass()
 	/*
      * Whew, made it across
      */
-    pthreads_mutex_lock(&lock); // AP JT
+    pthread_mutex_lock(&lock); // AP JT
     numCrossingSago2MonkeyGrass--;
     sem_post(&lizLock); // AP JT
-    pthreads_mutex_unlock(&lock); // AP JT
+    pthread_mutex_unlock(&lock); // AP JT
 
 	if (debug)
     {
+        sem_wait(&debugLock); // AP JT
 		cout << "[" << _id << "] made the  sago -> monkey grass  crossing" << endl;
 		cout << std::flush;
+		sem_post(&debugLock); // AP JT
     }
 }
 
@@ -514,8 +537,10 @@ void Lizard::eat()
 
 	if (debug)
     {
+        sem_wait(&debugLock); // AP JT
 		cout << "[" << _id << "] eating for " << eatSeconds << " seconds" << endl;
 		cout << std::flush;
+		sem_post(&debugLock); // AP JT
     }
 
 	/*
@@ -525,8 +550,10 @@ void Lizard::eat()
 
 	if (debug)
     {
-      cout << "[" << _id << "] finished eating" << endl;
-      cout << std::flush;
+        sem_wait(&debugLock); // AP JT
+        cout << "[" << _id << "] finished eating" << endl;
+        cout << std::flush;
+        sem_post(&debugLock); // AP JT
     }
 }
 
@@ -542,21 +569,25 @@ void Lizard::monkeyGrass2SagoIsSafe()
 {
 	if (debug)
     {
+        sem_wait(&debugLock); // AP JT
 		cout << "[" << _id << "] checking  monkey grass -> sago" << endl;
 		cout << std::flush;
+		sem_post(&debugLock); // AP JT
     }
 
     sem_wait(&lizLock); // AP JT
-    pthreads_mutex_lock(&lock); // AP JT
+    pthread_mutex_lock(&lock); // AP JT
     numCrossingMonkeyGrass2Sago++; // AP JT
-    pthreads_mutex_unlock(&lock); // AP JT
+    pthread_mutex_unlock(&lock); // AP JT
 
 
 
 	if (debug)
     {
+        sem_wait(&debugLock); // AP JT
 		cout << "[" << _id << "] thinks  monkey grass -> sago  is safe" << endl;
 		cout << std::flush;
+		sem_post(&debugLock); // AP JT
     }
 }
 
@@ -570,22 +601,28 @@ void Lizard::monkeyGrass2SagoIsSafe()
  */
 void Lizard::crossMonkeyGrass2Sago()
 {
+    //Checks to see if it is safe then starts
+    monkeyGrass2SagoIsSafe(); // AP JT
+
+
 	if (debug)
     {
+        sem_wait(&debugLock); // AP JT
 		cout << "[" << _id << "] crossing  monkey grass -> sago" << endl;
 		cout << std::flush;
+		sem_post(&debugLock); // AP JT
     }
 
     /*
      * One more crossing this way
      */
-	monkeyGrass2SagoIsSafe(); // AP JT
+
 
 
     /*
      * Check for lizards cross both ways
      */
-    pthreads_mutex_lock(&lock); // AP JT
+    pthread_mutex_lock(&lock); // AP JT
 	if (numCrossingSago2MonkeyGrass && UNIDIRECTIONAL)
     {
 		cout << "\tOh No!, the lizards have cats all over them." << endl;
@@ -593,7 +630,7 @@ void Lizard::crossMonkeyGrass2Sago()
 		cout << "\t " << numCrossingMonkeyGrass2Sago << " crossing monkey grass -> sago" << endl;
 		exit( -1 );
     }
-    pthreads_mutex_unlock(&lock); // AP JT
+    pthread_mutex_unlock(&lock); // AP JT
 
 	/*
      * It takes a while to cross, so simulate it
@@ -618,14 +655,16 @@ void Lizard::madeIt2Sago()
 	/*
      * Whew, made it across
      */
-    pthreads_mutex_lock(&lock); // AP JT
+    pthread_mutex_lock(&lock); // AP JT
     numCrossingMonkeyGrass2Sago--;
     sem_post(&lizLock); // AP JT
-    pthreads_mutex_unlock(&lock); // AP JT
+    pthread_mutex_unlock(&lock); // AP JT
 	if (debug)
     {
+        sem_wait(&debugLock); // AP JT
 		cout << "[" << _id << "] made the  monkey grass -> sago  crossing" << endl;
 		cout << std::flush;
+		sem_post(&debugLock); // AP JT
     }
 }
 
@@ -675,15 +714,16 @@ int main(int argc, char **argv)
 	/*
      * Initialize locks and/or semaphores
      */
-    pthread_mutex_init(&Lock); // AP JT
-    sem_init(&lizLock, 0, MAX_LIZARD_CROSSING)
+    pthread_mutex_init(&lock, NULL); // AP JT
+    sem_init(&lizLock, 0, MAX_LIZARD_CROSSING); // AP JT
+    sem_init(&debugLock, 0, 1); // AP JT
 
 
 
 	/*
      * Create NUM_LIZARDS lizard threads
      */
-    Lizard** allLizards = new Lizard*[NUM_LIZARDS];
+    Lizard** allLizards = new Lizard*[NUM_LIZARDS]; // AP JT
     for(i=0; i<NUM_LIZARDS; i++) // AP JT
         allLizards[i] = new Lizard(i); // AP JT
 
@@ -699,10 +739,10 @@ int main(int argc, char **argv)
 
     // run lizard and cat threads
     for(i=0; i<NUM_LIZARDS; i++) // AP JT
-        allLizards[i].run(); // AP JT
+        allLizards[i]->run(); // AP JT
 
     for(i=0; i<NUM_CATS; i++) // AP JT
-        allCats[i].run(); // AP JT
+        allCats[i]->run(); // AP JT
 
 
 	/*
@@ -721,11 +761,11 @@ int main(int argc, char **argv)
      * Wait until all threads terminate
      */
     for(i=0; i<NUM_LIZARDS; i++) // AP JT
-        allLizards[i].wait(); // AP JT
+        allLizards[i]->wait(); // AP JT
 
 
     for(i=0; i<NUM_CATS; i++) // AP JT
-        allCats[i].wait(); // AP JT
+        allCats[i]->wait(); // AP JT
 
 
 
@@ -737,6 +777,7 @@ int main(int argc, char **argv)
      */
     pthread_mutex_destroy(&lock); // AP JT
     sem_destroy(&lizLock); // AP JT
+    sem_destroy(&debugLock); // AP JT
 
     /*
      * Delete all cat and lizard objects
