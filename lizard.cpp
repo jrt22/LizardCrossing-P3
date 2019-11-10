@@ -104,6 +104,7 @@ semaphore is for lizards
 pthread_mutex_t lock; // AP JT
 sem_t lizLock; // AP JT
 
+
 /**************************************************/
 /* Please leave these variables alone.  They are  */
 /* used to check the proper functioning of your   */
@@ -136,9 +137,6 @@ class Cat {
 		void sleepNow();
 };
 
-
-{//TAKE THIS OUT BEFORE RUNNING THE CODE
-//THE OTHER SIDE IS AT THE END OF CAT FUNCTIONS
 
 
 /**
@@ -254,7 +252,7 @@ void Cat::sleepNow()
     }
 }
 
-}//end cat functions
+
 
 
 class Lizard {
@@ -281,8 +279,7 @@ class Lizard {
 
 };
 
-{//TAKE THIS OUT BEFORE RUNNING THE CODE
-//THE OTHER SIDE IS AT THE END OF lizard FUNCTIONS
+
 
 /**
  * Constructs a lizard.
@@ -357,23 +354,15 @@ void * Lizard::runThread( void * param )
        * are already completed - see the comments.
        */
 
+        //lizard needs to sleep, move, eat, move, repeat
 
+        myLizard->sleepNow(); // AP JT
 
+        myLizard->crossSago2MonkeyGrass(); // AP JT
 
+        myLizard->eat(); // AP JT
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+        myLizard->crossMonkeyGrass2Sago(); // AP JT
     }
 
 	pthread_exit(NULL);
@@ -417,7 +406,7 @@ void Lizard::sleepNow()
  * to the monkey grass.   Should use some synchronization
  * facilities (lock/semaphore) here.
  *
- * Status: Incomplete - Make changes as you see are necessary.
+ * Status: Testing AP JT
  */
 void Lizard::sago2MonkeyGrassIsSafe()
 {
@@ -427,6 +416,10 @@ void Lizard::sago2MonkeyGrassIsSafe()
 		cout << std::flush;
     }
 
+    sem_wait(&lizLock); // AP JT
+    pthreads_mutex_lock(&lock); // AP JT
+    numCrossingSago2MonkeyGrass++; // AP JT
+    pthreads_mutex_unlock(&lock); // AP JT
 
 
 
@@ -435,6 +428,7 @@ void Lizard::sago2MonkeyGrassIsSafe()
 		cout << "[" << _id << "] thinks  sago -> monkey grass  is safe" << endl;
 		cout << std::flush;
     }
+
 }
 
 
@@ -443,7 +437,7 @@ void Lizard::sago2MonkeyGrassIsSafe()
  * Delays for 1 second to simulate crossing from the sago to
  * the monkey grass.
  *
- * Status: Incomplete - Make changes as you see are necessary.
+ * Status: Test AP JT
  */
 void Lizard::crossSago2MonkeyGrass()
 {
@@ -456,11 +450,13 @@ void Lizard::crossSago2MonkeyGrass()
 	/*
 	 * One more crossing this way
 	 */
-	numCrossingSago2MonkeyGrass++;
+    Sago2MonkeyGrassIsSafe(); //AP JT
+
 
 	/*
      * Check for lizards cross both ways
      */
+    pthreads_mutex_lock(&lock); // AP JT
 	if (numCrossingMonkeyGrass2Sago && UNIDIRECTIONAL)
     {
 		cout << "\tCrash!  We have a pile-up on the concrete." << endl;
@@ -468,7 +464,7 @@ void Lizard::crossSago2MonkeyGrass()
 		cout << "\t" << numCrossingMonkeyGrass2Sago << " crossing monkey grass -> sago" << endl;
 		exit( -1 );
     }
-
+    pthreads_mutex_unlock(&lock); // AP JT
 
 	/*
      * It takes a while to cross, so simulate it
@@ -478,30 +474,30 @@ void Lizard::crossSago2MonkeyGrass()
     /*
      * That one seems to have made it
      */
-    numCrossingSago2MonkeyGrass--;
+    madeIt2MonkeyGrass(); // AP JT
 }
 
 
 /**
  * Tells others they can go now
  *
- * Status: Incomplete - Make changes as you see are necessary.
+ * Status: Testing AP JT
  */
 void Lizard::madeIt2MonkeyGrass()
 {
 	/*
      * Whew, made it across
      */
+    pthreads_mutex_lock(&lock); // AP JT
+    numCrossingSago2MonkeyGrass--;
+    sem_post(&lizLock); // AP JT
+    pthreads_mutex_unlock(&lock); // AP JT
+
 	if (debug)
     {
 		cout << "[" << _id << "] made the  sago -> monkey grass  crossing" << endl;
 		cout << std::flush;
     }
-
-
-
-
-
 }
 
 
@@ -540,7 +536,7 @@ void Lizard::eat()
  * grass to the sago.   Should use some synchronization
  * facilities (lock/semaphore) here.
  *
- * Status: Incomplete - Make changes as you see are necessary.
+ * Status: Testing AP JT
  */
 void Lizard::monkeyGrass2SagoIsSafe()
 {
@@ -550,7 +546,10 @@ void Lizard::monkeyGrass2SagoIsSafe()
 		cout << std::flush;
     }
 
-
+    sem_wait(&lizLock); // AP JT
+    pthreads_mutex_lock(&lock); // AP JT
+    numCrossingMonkeyGrass2Sago++; // AP JT
+    pthreads_mutex_unlock(&lock); // AP JT
 
 
 
@@ -567,7 +566,7 @@ void Lizard::monkeyGrass2SagoIsSafe()
  * Delays for 1 second to simulate crossing from the monkey
  * grass to the sago.
  *
- * Status: Incomplete - Make changes as you see are necessary.
+ * Status: Testing AP JT
  */
 void Lizard::crossMonkeyGrass2Sago()
 {
@@ -580,12 +579,13 @@ void Lizard::crossMonkeyGrass2Sago()
     /*
      * One more crossing this way
      */
-	numCrossingMonkeyGrass2Sago++;
+	monkeyGrass2SagoIsSafe(); // AP JT
 
 
     /*
      * Check for lizards cross both ways
      */
+    pthreads_mutex_lock(&lock); // AP JT
 	if (numCrossingSago2MonkeyGrass && UNIDIRECTIONAL)
     {
 		cout << "\tOh No!, the lizards have cats all over them." << endl;
@@ -593,6 +593,7 @@ void Lizard::crossMonkeyGrass2Sago()
 		cout << "\t " << numCrossingMonkeyGrass2Sago << " crossing monkey grass -> sago" << endl;
 		exit( -1 );
     }
+    pthreads_mutex_unlock(&lock); // AP JT
 
 	/*
      * It takes a while to cross, so simulate it
@@ -602,7 +603,7 @@ void Lizard::crossMonkeyGrass2Sago()
 	/*
      * That one seems to have made it
      */
-	numCrossingMonkeyGrass2Sago--;
+	madeIt2Sago(); // AP JT
 }
 
 
@@ -610,13 +611,17 @@ void Lizard::crossMonkeyGrass2Sago()
  *
  * Tells others they can go now
  *
- * Status: Incomplete - Make changes as you see are necessary.
+ * Status: Testing AP JT
  */
 void Lizard::madeIt2Sago()
 {
 	/*
      * Whew, made it across
      */
+    pthreads_mutex_lock(&lock); // AP JT
+    numCrossingMonkeyGrass2Sago--;
+    sem_post(&lizLock); // AP JT
+    pthreads_mutex_unlock(&lock); // AP JT
 	if (debug)
     {
 		cout << "[" << _id << "] made the  monkey grass -> sago  crossing" << endl;
@@ -624,7 +629,6 @@ void Lizard::madeIt2Sago()
     }
 }
 
-}//ends lizard functions
 
 
 
