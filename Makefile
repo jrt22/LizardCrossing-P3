@@ -1,5 +1,6 @@
-FLAGS = -lpthread -g 
+FLAGS = -g -Wall -std=c++11 
 CC = g++
+CFLAGS = -lpthread
 
 objects = lizard.cpp
 
